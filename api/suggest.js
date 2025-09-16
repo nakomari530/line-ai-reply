@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "You are a helpful LINE reply assistant." },
           { role: "user", content: `このメッセージに短め・丁寧・冗談の3パターンで返信案を作ってください: ${text}` }
@@ -32,18 +32,20 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // デバッグ用にレスポンス全体をログ出力
+    // デバッグ用ログ
     console.log("OpenAI Response:", JSON.stringify(data, null, 2));
 
+    // 安全に取得
     const messageContent = data.choices?.[0]?.message?.content;
     if (!messageContent) {
       console.error("No message content received from OpenAI");
     }
 
+    const lines = messageContent?.split("\n") || [];
     const suggestions = [
-      { label: "A", text: messageContent?.split("\n")[0] || "AIからの返信取得に失敗" },
-      { label: "B", text: messageContent?.split("\n")[1] || "" },
-      { label: "C", text: messageContent?.split("\n")[2] || "" }
+      { label: "A", text: lines[0] || "AIからの返信取得に失敗" },
+      { label: "B", text: lines[1] || "" },
+      { label: "C", text: lines[2] || "" }
     ];
 
     res.status(200).json({ ok: true, suggestions });
