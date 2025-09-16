@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const HF_API_KEY = process.env.HF_API_KEY;
   if (!HF_API_KEY) {
     console.error("Hugging Face API key is not set");
-    return res.status(500).json({ error: "Hugging Face API key is not set" });
+    return res.status(500).json({ error: "HF_API_KEY is not set" });
   }
 
   try {
@@ -28,15 +28,18 @@ export default async function handler(req, res) {
       }
     );
 
+    // JSONとしてパース
     const data = await response.json();
     console.log("HF Response:", JSON.stringify(data, null, 2));
 
+    // 生成テキスト取得
     const messageContent =
       typeof data?.[0]?.generated_text === "string"
         ? data[0].generated_text
         : "";
     const lines = messageContent.split("\n").filter(line => line.trim() !== "");
 
+    // suggestions 作成
     const suggestions = [
       { label: "A", text: lines[0] || "AIからの返信取得に失敗" },
       { label: "B", text: lines[1] || "" },
