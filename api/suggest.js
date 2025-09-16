@@ -35,12 +35,7 @@ export default async function handler(req, res) {
     // デバッグ用ログ
     console.log("OpenAI Response:", JSON.stringify(data, null, 2));
 
-    // 安全に取得
     const messageContent = data.choices?.[0]?.message?.content;
-    if (!messageContent) {
-      console.error("No message content received from OpenAI");
-    }
-
     const lines = messageContent?.split("\n") || [];
     const suggestions = [
       { label: "A", text: lines[0] || "AIからの返信取得に失敗" },
