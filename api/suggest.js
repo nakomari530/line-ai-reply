@@ -6,37 +6,32 @@ export default async function handler(req, res) {
   const body = req.body || {};
   const text = body.text || "";
 
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-  if (!OPENAI_API_KEY) {
-    console.error("OpenAI API key is not set");
-    return res.status(500).json({ error: "OpenAI API key is not set" });
+  const HF_API_KEY = process.env.HF_API_KEY;
+  if (!HF_API_KEY) {
+    console.error("Hugging Face API key is not set");
+    return res.status(500).json({ error: "Hugging Face API key is not set" });
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api-inference.huggingface.co/models/mpt-7b-chat", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
+        "Authorization": `Bearer ${HF_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are a helpful LINE reply assistant." },
-          { role: "user", content: `このメッセージに短め・丁寧・冗談の3パターンで返信案を作ってください: ${text}` }
-        ],
-        max_tokens: 150,
-        temperature: 0.8
+        inputs: `このメッセージに短め・丁寧・冗談の3パターンで返信案を作ってください: ${text}`,
+        parameters: { max_new_tokens: 150 }
       })
     });
 
     const data = await response.json();
+    console.log("HF Response:", JSON.stringify(data, null, 2));
 
-    // デバッグ用ログ
-    console.log("OpenAI Response:", JSON.stringify(data, null, 2));
+    // モデルの返答を1つの文字列にまとめて改行で分割
+    const messageContent = typeof data?.[0]?.generated_text === "string" ? data[0].generated_text : "";
+    const lines = messageContent.split("\n").filter(line => line.trim() !== "");
 
-    const messageContent = data.choices?.[0]?.message?.content;
-    const lines = messageContent?.split("\n") || [];
     const suggestions = [
       { label: "A", text: lines[0] || "AIからの返信取得に失敗" },
       { label: "B", text: lines[1] || "" },
