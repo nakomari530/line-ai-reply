@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/mosaicml/mpt-7b-chat",
+      "https://api-inference.huggingface.co/models/TheBloke/vicuna-7B-1.1-HF",
       {
         method: "POST",
         headers: {
