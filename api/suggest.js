@@ -1,9 +1,17 @@
-export default async function handler(req, res) {
-  const body = await req.body;
-  const userMessage = body.text || "こんにちは";
+// api/suggest.js
+export default function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "POST only" });
+  }
 
-  // OpenAIなどのAIに送る処理（ここではダミーの返信）
-  const reply = `AI案：「${userMessage}」への返信例です`;
+  const body = req.body || {};
+  const text = body.text || "Hello";
 
-  res.status(200).json({ reply });
+  const suggestions = [
+    { label: "A", text: `短め: ${text} への返信` },
+    { label: "B", text: `丁寧: ${text} への返信` },
+    { label: "C", text: `冗談: ${text} への返信` },
+  ];
+
+  return res.status(200).json({ ok: true, suggestions });
 }
