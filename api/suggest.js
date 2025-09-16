@@ -1,32 +1,29 @@
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
   }
 
-  const body = req.body || {};
-  const text = body.text || "";
+  const { text } = req.body || {};
+  if (!text) return res.status(400).json({ error: "No text provided" });
 
   const HF_API_KEY = process.env.HF_API_KEY;
-  if (!HF_API_KEY) {
-    console.error("Hugging Face API key is not set");
-    return res.status(500).json({ error: "HF_API_KEY is not set" });
-  }
+  if (!HF_API_KEY) return res.status(500).json({ error: "HF_API_KEY not set" });
 
   try {
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/gpt2",
+      "https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-125m",
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           inputs: `このメッセージに短め・丁寧・冗談の3パターンで返信案を作ってください: ${text}`,
-          parameters: { max_new_tokens: 150 }
-        })
+          parameters: { max_new_tokens: 150 },
+        }),
       }
     );
 
@@ -36,23 +33,19 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    console.log("HF Response:", JSON.stringify(data, null, 2));
+    const replyText = data[0]?.generated_text || "AIからの返信取得に失敗";
 
-    const messageContent =
-      typeof data?.[0]?.generated_text === "string"
-        ? data[0].generated_text
-        : "";
-    const lines = messageContent.split("\n").filter(line => line.trim() !== "");
-
+    // 簡単に3パターンに分割
+    const lines = replyText.split("\n").filter(Boolean);
     const suggestions = [
       { label: "A", text: lines[0] || "AIからの返信取得に失敗" },
       { label: "B", text: lines[1] || "" },
-      { label: "C", text: lines[2] || "" }
+      { label: "C", text: lines[2] || "" },
     ];
 
     res.status(200).json({ ok: true, suggestions });
   } catch (err) {
-    console.error("Fetch error:", err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 }
