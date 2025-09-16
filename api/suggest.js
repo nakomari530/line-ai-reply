@@ -6,9 +6,9 @@ export default async function handler(req, res) {
   const body = req.body || {};
   const text = body.text || "";
 
-  // APIキーが未設定ならエラー
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   if (!OPENAI_API_KEY) {
+    console.error("OpenAI API key is not set");
     return res.status(500).json({ error: "OpenAI API key is not set" });
   }
 
@@ -32,18 +32,24 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // undefined参照対策
-    const messageContent = data.choices?.[0]?.message?.content || "AIからの返信取得に失敗";
+    // デバッグ用にレスポンス全体をログ出力
+    console.log("OpenAI Response:", JSON.stringify(data, null, 2));
+
+    const messageContent = data.choices?.[0]?.message?.content;
+    if (!messageContent) {
+      console.error("No message content received from OpenAI");
+    }
 
     const suggestions = [
-      { label: "A", text: messageContent.split("\n")[0] || "" },
-      { label: "B", text: messageContent.split("\n")[1] || "" },
-      { label: "C", text: messageContent.split("\n")[2] || "" }
+      { label: "A", text: messageContent?.split("\n")[0] || "AIからの返信取得に失敗" },
+      { label: "B", text: messageContent?.split("\n")[1] || "" },
+      { label: "C", text: messageContent?.split("\n")[2] || "" }
     ];
 
     res.status(200).json({ ok: true, suggestions });
+
   } catch (err) {
-    console.error(err);
+    console.error("Fetch error:", err);
     res.status(500).json({ error: err.message });
   }
 }
