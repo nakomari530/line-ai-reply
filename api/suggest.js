@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
@@ -14,7 +16,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/TheBloke/vicuna-7B-1.1-HF",
+      "https://api-inference.huggingface.co/models/gpt2",
       {
         method: "POST",
         headers: {
@@ -28,18 +30,20 @@ export default async function handler(req, res) {
       }
     );
 
-    // JSONとしてパース
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ error: errorText });
+    }
+
     const data = await response.json();
     console.log("HF Response:", JSON.stringify(data, null, 2));
 
-    // 生成テキスト取得
     const messageContent =
       typeof data?.[0]?.generated_text === "string"
         ? data[0].generated_text
         : "";
     const lines = messageContent.split("\n").filter(line => line.trim() !== "");
 
-    // suggestions 作成
     const suggestions = [
       { label: "A", text: lines[0] || "AIからの返信取得に失敗" },
       { label: "B", text: lines[1] || "" },
