@@ -13,23 +13,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch("https://api-inference.huggingface.co/models/mpt-7b-chat", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${HF_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        inputs: `このメッセージに短め・丁寧・冗談の3パターンで返信案を作ってください: ${text}`,
-        parameters: { max_new_tokens: 150 }
-      })
-    });
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/mosaicml/mpt-7b-chat",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${HF_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          inputs: `このメッセージに短め・丁寧・冗談の3パターンで返信案を作ってください: ${text}`,
+          parameters: { max_new_tokens: 150 }
+        })
+      }
+    );
 
     const data = await response.json();
     console.log("HF Response:", JSON.stringify(data, null, 2));
 
-    // モデルの返答を1つの文字列にまとめて改行で分割
-    const messageContent = typeof data?.[0]?.generated_text === "string" ? data[0].generated_text : "";
+    const messageContent =
+      typeof data?.[0]?.generated_text === "string"
+        ? data[0].generated_text
+        : "";
     const lines = messageContent.split("\n").filter(line => line.trim() !== "");
 
     const suggestions = [
@@ -39,7 +44,6 @@ export default async function handler(req, res) {
     ];
 
     res.status(200).json({ ok: true, suggestions });
-
   } catch (err) {
     console.error("Fetch error:", err);
     res.status(500).json({ error: err.message });
